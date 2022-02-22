@@ -315,14 +315,29 @@ static VALUE method_zkrb_init(int argc, VALUE* argv, VALUE self) {
 
   zk_local_ctx->object_id = FIX2LONG(rb_obj_id(self));
 
-  zk_local_ctx->zh =
-      zookeeper_init(
-          RSTRING_PTR(hostPort),        // const char *host
-          zkrb_state_callback,          // watcher_fn
-          receive_timeout_msec(self),   // recv_timeout
-          &zk_local_ctx->myid,          // cilentid_t
-          ctx,                          // void *context
-          0);                           // flags
+  VALUE sslcert = rb_hash_aref(options, ID2SYM(rb_intern("sslcert")));
+
+  if (NIL_P(sslcert)) {
+    zk_local_ctx->zh =
+        zookeeper_init(
+            RSTRING_PTR(hostPort),        // const char *host
+            zkrb_state_callback,          // watcher_fn
+            receive_timeout_msec(self),   // recv_timeout
+            &zk_local_ctx->myid,          // cilentid_t
+            ctx,                          // void *context
+            0);                           // flags
+  } else {
+    Check_Type(sslcert, T_STRING);
+    zk_local_ctx->zh =
+        zookeeper_init_ssl(
+            RSTRING_PTR(hostPort),        // const char *host
+            RSTRING_PTR(sslcert),         // const char *cert
+            zkrb_state_callback,          // watcher_fn
+            receive_timeout_msec(self),   // recv_timeout
+            &zk_local_ctx->myid,          // cilentid_t
+            ctx,                          // void *context
+            0);                           // flags
+  }
 
   zkrb_debug("method_zkrb_init, zk_local_ctx: %p, zh: %p, queue: %p, calling_ctx: %p",
       zk_local_ctx, zk_local_ctx->zh, zk_local_ctx->queue, ctx);

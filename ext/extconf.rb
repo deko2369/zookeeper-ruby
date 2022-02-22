@@ -26,6 +26,8 @@ if RUBY_VERSION == '1.8.7'
   $CFLAGS << ' -DZKRB_RUBY_187'
 end
 
+$CFLAGS << ' -DHAVE_OPENSSL_H'
+
 ZK_DEBUG = (ENV['DEBUG'] or ARGV.any? { |arg| arg == '--debug' })
 ZK_DEV = ENV['ZK_DEV']
 DEBUG_CFLAGS = " -O0 -ggdb3 -DHAVE_DEBUG -fstack-protector-all"
@@ -69,7 +71,7 @@ Dir.chdir(HERE) do
     FileUtils.rm_f(Dir['**/._*'].select{|p| test(?f, p)})
 
     Dir.chdir(BUNDLE_PATH) do
-      configure = "./configure --prefix=#{HERE} --with-pic --without-cppunit --disable-dependency-tracking #{$EXTRA_CONF} 2>&1"
+      configure = "./configure --prefix=#{HERE} --with-pic --with-openssl --without-cppunit --disable-dependency-tracking #{$EXTRA_CONF} 2>&1"
       configure = "env CFLAGS='#{DEBUG_CFLAGS}' #{configure}" if ZK_DEBUG
 
       safe_sh(configure)
@@ -93,7 +95,7 @@ Dir.chdir("#{HERE}/lib") do
 end
 
 # -lm must come after lzookeeper_st_gem to ensure proper link
-$LIBS << " -lzookeeper_st_gem -lm"
+$LIBS << " -lzookeeper_st_gem -lm -lssl -lcrypto"
 
 have_func('rb_thread_blocking_region')
 have_func('rb_thread_fd_select')
